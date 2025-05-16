@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuberjet-deployment
+  labels:
+    app: kuberjet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kuberjet
+  template:
+    metadata:
+      labels:
+        app: kuberjet
+    spec:
+      containers:
+        - name: kuberjet-container
+          image: mehmettalha/kuberjet:latest
+
+          ports:
+            - containerPort: 8061
