@@ -27,16 +27,23 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') { // 3. Aşama: Docker imajı oluştur
-            steps {
-                script {
-                    def imageTag = env.BUILD_NUMBER ?: "latest"
-                    env.IMAGE_FULL_NAME_WITH_TAG = "${env.DOCKER_IMAGE_NAME}:${imageTag}"
-                    bat "docker build -t ${env.IMAGE_FULL_NAME_WITH_TAG} ."
-                    echo "Docker imajı başarıyla oluşturuldu: ${env.IMAGE_FULL_NAME_WITH_TAG}"
-                }
-            }
-        }
+       stage('Build Docker Image') {
+           steps {
+               script {
+                   def buildTag = env.BUILD_NUMBER ?: "dev" // Eğer build no yoksa 'dev' gibi bir tag kullan
+                   env.IMAGE_WITH_BUILD_TAG = "${env.DOCKER_IMAGE_NAME}:${buildTag}"
+                   env.IMAGE_WITH_LATEST_TAG = "${env.DOCKER_IMAGE_NAME}:latest"
+
+                   // Önce build numarasıyla build et
+                   bat "docker build -t ${env.IMAGE_WITH_BUILD_TAG} ."
+                   echo "Docker imajı başarıyla oluşturuldu: ${env.IMAGE_WITH_BUILD_TAG}"
+
+                   // Aynı imajı :latest olarak da etiketle
+                   bat "docker tag ${env.IMAGE_WITH_BUILD_TAG} ${env.IMAGE_WITH_LATEST_TAG}"
+                   echo "İmaj ayrıca etiketlendi: ${env.IMAGE_WITH_LATEST_TAG}"
+               }
+           }
+       }
 
         stage('Login to Docker Hub') {
             steps {
@@ -63,14 +70,19 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') { // 5. Aşama: Docker Hub’a imajı gönder
-            steps {
-                script {
-                    bat "docker push ${env.IMAGE_FULL_NAME_WITH_TAG}"
-                    echo "Docker imajı başarıyla gönderildi: ${env.IMAGE_FULL_NAME_WITH_TAG}"
-                }
-            }
-        }
+       stage('Push Docker Image') {
+           steps {
+               script {
+                   // Önce build numaralı imajı push'la (opsiyonel ama iyi bir pratik)
+                   bat "docker push ${env.IMAGE_WITH_BUILD_TAG}"
+                   echo "Docker imajı başarıyla Docker Hub'a gönderildi: ${env.IMAGE_WITH_BUILD_TAG}"
+
+                   // Sonra :latest etiketli imajı push'la
+                   bat "docker push ${env.IMAGE_WITH_LATEST_TAG}"
+                   echo "Docker imajı (:latest) başarıyla Docker Hub'a gönderildi: ${env.IMAGE_WITH_LATEST_TAG}"
+               }
+           }
+       }
 
      stage('Deploy to Kubernetes') {
          steps {
