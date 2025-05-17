@@ -49,16 +49,39 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') { // 4. Aşama: Docker Hub'a giriş yap
-            steps {
-                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    // Windows için bat komutu. Değişkenlerin doğru kullanıldığından emin ol.
-                    // Çift tırnaklar Groovy'de değişken interpolasyonu için önemlidir.
-                    bat "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                    echo "Docker Hub'a başarıyla giriş yapıldı."
-                }
-            }
-        }
+        stage('Login to Docker Hub') {
+                            steps {
+                                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                    script {
+                                        echo "Attempting Docker login for user: ${DOCKER_USER}"
+                                        // DOCKER_PASS değişkeninin içeriğini (token) maskeleyerek loglayalım (ilk birkaç karakteri)
+                                        if (env.DOCKER_PASS != null && env.DOCKER_PASS.length() > 5) {
+                                            echo "DOCKER_PASS (token) starts with: ${DOCKER_PASS.substring(0,5)}*****"
+                                        } else {
+                                            echo "DOCKER_PASS (token) is short or null."
+                                        }
+
+                                        // Önceki bat komutunu yorum satırı yapalım:
+                                        // bat "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+
+                                        // Yeni deneme: Şifreyi (token'ı) doğrudan -p parametresiyle vermek
+                                        // Çift tırnaklara dikkat et, özellikle Windows'ta önemli olabilir.
+                                        // DOCKER_USER ve DOCKER_PASS değişkenlerinin doğru geldiğinden emin olmak için de logladık.
+                                        bat "docker login -u \"${DOCKER_USER}\" -p \"${DOCKER_PASS}\""
+
+                                        echo "Docker Hub login command executed." // Bu satır, komutun çalıştırıldığını teyit eder.
+                                    }
+                                }
+                            }
+                            post {
+                                success {
+                                    echo "Docker Hub'a başarıyla giriş yapıldı."
+                                }
+                                failure {
+                                    echo "Docker Hub'a giriş BAŞARISIZ OLDU."
+                                }
+                            }
+                        }
 
         stage('Push Docker Image') { // 5. Aşama: Docker imajını Docker Hub'a gönder
             steps {
