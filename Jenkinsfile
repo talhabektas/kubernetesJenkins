@@ -93,13 +93,22 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') { // 6. ve 7. Aşamalar: Kubernetes'e deploy et
+        stage('Deploy to Kubernetes') {
             steps {
-                // Windows için bat komutları
-                bat 'kubectl apply -f deployment.yaml'
-                bat 'kubectl apply -f service.yaml'
                 script {
-                    echo "Kubernetes'e başarıyla deploy edildi."
+                    echo "Deploying application to Kubernetes..."
+                    bat "kubectl apply -f deployment.yaml"
+                    echo "Application deployment command executed."
+                }
+            }
+            post {
+                success {
+                    echo "Uygulama Kubernetes'e başarıyla dağıtıldı."
+                }
+                failure {
+                    echo "Uygulama Kubernetes'e DAĞITILAMADI."
+                    // Belki burada kubectl get all gibi bir komutla durumu loglayabiliriz
+                    // bat "kubectl get all --all-namespaces"
                 }
             }
         }
