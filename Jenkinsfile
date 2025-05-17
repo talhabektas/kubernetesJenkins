@@ -95,10 +95,29 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    echo "Deploying application to Kubernetes..."
-                    bat "kubectl apply -f deployment.yaml"
-                    echo "Application deployment command executed."
+                // KUBECONFIG_FILE adında bir değişkene, kimlik bilgisi olarak yüklediğimiz
+                // dosyanın Jenkins workspace'indeki geçici yolunu atıyoruz.
+                withCredentials([file(credentialsId: 'kubeconfig-dockerdesktop', variable: 'KUBECONFIG_FILE')]) {
+                    script {
+                        echo "Deploying application to Kubernetes using KUBECONFIG from credentials..."
+                        echo "KUBECONFIG file path: ${KUBECONFIG_FILE}" // Dosya yolunu loglayalım
+
+                        // Yöntem A: KUBECONFIG ortam değişkenini withEnv bloğu içinde ayarlamak
+                        // Bu, kubectl'in otomatik olarak doğru config dosyasını kullanmasını sağlar.
+                        withEnv(["KUBECONFIG=${KUBECONFIG_FILE}"]) {
+                            bat "kubectl config view" // Hangi config'i gördüğünü kontrol etmek için
+                            bat "kubectl get nodes"   // Bağlantıyı ve yetkiyi tekrar test etmek için
+                            bat "kubectl apply -f deployment.yaml"
+                        }
+
+                        // Alternatif Yöntem B: --kubeconfig parametresini her kubectl komutuna eklemek
+                        // Eğer yukarıdaki withEnv sorun çıkarırsa bu denenebilir.
+                        // bat "kubectl --kubeconfig=\"${KUBECONFIG_FILE}\" config view"
+                        // bat "kubectl --kubeconfig=\"${KUBECONFIG_FILE}\" get nodes"
+                        // bat "kubectl --kubeconfig=\"${KUBECONFIG_FILE}\" apply -f deployment.yaml"
+
+                        echo "Application deployment command executed."
+                    }
                 }
             }
             post {
@@ -107,8 +126,13 @@ pipeline {
                 }
                 failure {
                     echo "Uygulama Kubernetes'e DAĞITILAMADI."
-                    // Belki burada kubectl get all gibi bir komutla durumu loglayabiliriz
-                    // bat "kubectl get all --all-namespaces"
+                    // Hata durumunda daha fazla bilgi almak için buraya da withCredentials ekleyebiliriz
+                    withCredentials([file(credentialsId: 'kubeconfig-dockerdesktop', variable: 'KUBECONFIG_FILE_POST')]) {
+                        withEnv(["KUBECONFIG=${KUBECONFIG_FILE_POST}"]) {
+                            bat "kubectl get all --all-namespaces"
+                            bat "kubectl describe pods" // Hata veren podlar hakkında detaylı bilgi
+                        }
+                    }
                 }
             }
         }
