@@ -16,7 +16,7 @@ pipeline {
         stage('Git Checkout') { // 1. Aşama: Projeyi GitHub'dan çek
             steps {
                 // GitHub depon ve ana branch'in (eğer farklıysa değiştir, örn: 'master')
-                git url: 'https://github.com/talhabektas/kubernetesJenkins.git', branch: 'main'
+                git url: 'https://github.com/talhabektas/kubernetesJenkins.git', branch: 'master'
                 script {
                     echo "Proje başarıyla klonlandı."
                 }
