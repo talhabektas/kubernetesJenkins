@@ -24,14 +24,19 @@ pipeline {
         }
 
         stage('Build Project (JAR)') { // 2. Aşama: Maven ile projeyi derle ve JAR oluştur
-            steps {
-                // Windows'ta bat ve mvnw.cmd kullanıyoruz
-                bat './mvnw.cmd clean package -DskipTests'
-                script {
-                    echo "Proje başarıyla derlendi ve JAR dosyası oluşturuldu."
+                    steps {
+                        // Windows'ta bat ve mvnw.cmd kullanıyoruz
+                        // Önce Jenkins'in Java'yı görüp görmediğini kontrol edelim
+                        bat 'java -version' // Java sürümünü yazdırır
+                        bat 'echo %JAVA_HOME%' // JAVA_HOME ortam değişkenini yazdırır (eğer ayarlıysa)
+
+                        // mvnw.cmd komutunu ./ olmadan deneyelim
+                        bat 'mvnw.cmd clean package -DskipTests'
+                        script {
+                            echo "Proje başarıyla derlendi ve JAR dosyası oluşturuldu."
+                        }
+                    }
                 }
-            }
-        }
 
         stage('Build Docker Image') { // 3. Aşama: Docker imajını oluştur
             steps {
