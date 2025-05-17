@@ -25,10 +25,8 @@ pipeline {
 
         stage('Build Project (JAR)') { // 2. Aşama: Maven ile projeyi derle ve JAR oluştur
             steps {
-                // Projende Maven Wrapper (mvnw) olduğunu varsayıyoruz.
-                // Eğer Jenkins agent'ın Windows ise 'bat "./mvnw.cmd clean package -DskipTests"' kullan.
-                // Eğer global Maven kullanıyorsan ve mvnw yoksa 'sh "mvn clean package -DskipTests"' kullan.
-                sh './mvnw clean package -DskipTests'
+                // Windows'ta bat ve mvnw.cmd kullanıyoruz
+                bat './mvnw.cmd clean package -DskipTests'
                 script {
                     echo "Proje başarıyla derlendi ve JAR dosyası oluşturuldu."
                 }
