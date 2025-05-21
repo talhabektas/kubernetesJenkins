@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class JenkkuberApplication {
-//comment6
+//comment7
     public static void main(String[] args) {
         SpringApplication.run(JenkkuberApplication.class, args);
     }
